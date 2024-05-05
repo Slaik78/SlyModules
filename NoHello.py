@@ -1,4 +1,4 @@
-
+import re
 from .. import loader, utils
 
 @loader.tds
@@ -20,6 +20,7 @@ class NoHello(loader.Module):
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
         if message.is_private:
-            if message.text.lower() in self.config['listNoHello']:
+            msg = re.sub(r'[^\w\s]', '', message.text.lower())
+            if msg in self.config['listNoHello']:
                 if message.from_id != self.tg_id:
                     await message.client.send_message(message.from_id, '<a href="https://nohello.net/ru">Прочти меня</a>', reply_to=message.id, link_preview=False)
