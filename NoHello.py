@@ -1,20 +1,4 @@
-#------------------------------------------------------------------
-#      ___           ___       ___                       ___     
-#     /\  \         /\__\     /\  \          ___        /\__\    
-#    /::\  \       /:/  /    /::\  \        /\  \      /:/  /    
-#   /:/\ \  \     /:/  /    /:/\:\  \       \:\  \    /:/__/     
-#  _\:\~\ \  \   /:/  /    /::\~\:\  \      /::\__\  /::\__\____ 
-# /\ \:\ \ \__\ /:/__/    /:/\:\ \:\__\  __/:/\/__/ /:/\:::::\__\
-# \:\ \:\ \/__/ \:\  \    \/__\:\/:/  / /\/:/  /    \/_|:|~~|~   
-#  \:\ \:\__\    \:\  \        \::/  /  \::/__/        |:|  |    
-#   \:\/:/  /     \:\  \       /:/  /    \:\__\        |:|  |    
-#    \::/  /       \:\__\     /:/  /      \/__/        |:|  |    
-#     \/__/         \/__/     \/__/                     \|__|   
-#------------------------------------------------------------------ 
-# meta developer: @hicota
 
-
-import re
 from .. import loader, utils
 
 @loader.tds
@@ -27,8 +11,8 @@ class NoHello(loader.Module):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
             "listNoHello",
-            ['привет', 'здарова', 'здаров', 'ку', 'пр'],
-            lambda: "Добавляй текст, который не хочешь видеть.",
+            ['привет', 'приветик', 'пр', 'здраствуйте', 'здраствуй', 'здрасте', 'здарова', 'здаров', 'здоров', 'дарова', 'даров' 'добрый день', 'добрый вечер', 'ку', 'салют', 'хай'],
+            lambda: "Здесь вы можете добавлять приветсивия",
             validator=loader.validators.Series()
             ),
         )
@@ -36,7 +20,6 @@ class NoHello(loader.Module):
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
         if message.is_private:
-            msg = re.sub(r'[^\w\s]', '', message.text.lower())
-            if msg in self.config['listNoHello']:
+            if message.text.lower() in self.config['listNoHello']:
                 if message.from_id != self.tg_id:
                     await message.client.send_message(message.from_id, '<a href="https://nohello.net/ru">Прочти меня</a>', reply_to=message.id, link_preview=False)
