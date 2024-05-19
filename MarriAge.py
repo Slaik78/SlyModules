@@ -13,6 +13,7 @@
 #------------------------------------------------------------------ 
 # meta developer: @hicota
 # translator: @jpshiro
+# requires: python-dotenv
 
 import os
 import random
