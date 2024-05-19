@@ -1,3 +1,19 @@
+#------------------------------------------------------------------
+#      ___           ___       ___                       ___     
+#     /\  \         /\__\     /\  \          ___        /\__\    
+#    /::\  \       /:/  /    /::\  \        /\  \      /:/  /    
+#   /:/\ \  \     /:/  /    /:/\:\  \       \:\  \    /:/__/     
+#  _\:\~\ \  \   /:/  /    /::\~\:\  \      /::\__\  /::\__\____ 
+# /\ \:\ \ \__\ /:/__/    /:/\:\ \:\__\  __/:/\/__/ /:/\:::::\__\
+# \:\ \:\ \/__/ \:\  \    \/__\:\/:/  / /\/:/  /    \/_|:|~~|~   
+#  \:\ \:\__\    \:\  \        \::/  /  \::/__/        |:|  |    
+#   \:\/:/  /     \:\  \       /:/  /    \:\__\        |:|  |    
+#    \::/  /       \:\__\     /:/  /      \/__/        |:|  |    
+#     \/__/         \/__/     \/__/                     \|__|   
+#------------------------------------------------------------------ 
+# meta developer: @hicota
+# translator: @jpshiro
+
 import os
 import random
 import pymysql
@@ -48,17 +64,17 @@ class MarriAge(loader.Module):
         "married": "{}\n• You are married with {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days{}",
         "love": "• <b>Should not to use rp commands on others, works only with your soulmate</b>",
         "rplist": {
-            "kiss": "💋 | {} kissed {} on the cheek",
-            "gift": "🎁 | {} gave a gift{}to {}", 
-            "hug": "👐 | {} hugged {}",
-            "fuck": "🚻 | {} fucked {}",
-            "compliment": "🤭 | {} told {} a cute compliment",
-            "stroke": "👋 | {} stroked {} on head",
-            "breakfast": "🥡 | {} cooked a breakfast",
-            "bit": "🧛 | {} bit {}",
-            "lick": "👅 | {} licked {}",
-            "push": "🏠 | {} pushed {} against a wall",
-            "gave": "❤‍🔥 | {} gave himself to {}"
+            "kiss": "<b>💋 | {} kissed {} on the cheek</b>",
+            "gift": "<b>🎁 | {} gave a gift {} to {}</b>", 
+            "hug": "<b>👐 | {} hugged {}</b>",
+            "fuck": "<b>🚻 | {} fucked {}</b>",
+            "compliment": "<b>🤭 | {} told {} a cute compliment</b>",
+            "stroke": "<b>👋 | {} stroked {} on head</b>",
+            "breakfast": "<b>🥡 | {} cooked a breakfast</b>",
+            "bit": "<b>🧛 | {} bit {}</b>",
+            "lick": "<b>👅 | {} licked {}</b>",
+            "push": "<b>🏠 | {} pushed {} against a wall</b>",
+            "gave": "<b>❤‍🔥 | {} gave himself to {}</b>"
         },
         "rplol": ['teddy', 'phone', 'watch', 'chocolate', 'car', 'pc', 'annual subscription to lavhost<emoji document_id=5192756799647785066>✌️</emoji><emoji document_id=5193117564015747203>✌️</emoji><emoji document_id=5195050806105087456>✌️</emoji><emoji document_id=5195457642587233944>✌️</emoji>']
     }
@@ -94,17 +110,17 @@ class MarriAge(loader.Module):
         "married": "{}\n• Вы находитесь в браке вместе с {}\n• <b>Дата регистрации брака:</b> {} {} {} year\n• <b>Продолжительность брака:</b> {} дней{}",
         "love": "• <b>Эти рп команды работают только при реплее на вашей половинке или без реплея</b>",
         "rplist": {
-            "поцеловать": "💋 | {} поцеловал/a в щёчку {}",
-            "подарок": "🎁 | {} подарил/a {} {}",
-            "обнять": "👐 | {} обнял/a {}",
-            "трахнуть": "🚻 | {} трахнул {}",
-            "комплимент": "🤭 | {} сказал/а ласковый комплимент {}",
-            "погладить": "👋 | {} погладил/а по голове {}",
-            "завтрак": "🥡 | {} приготовил/а завтрак {}",
-            "кусь": "🧛 | {} куснул/а {}",
-            "лизь": "👅 | {} лизнул/а {}",
-            "прижал": "🏠 | {} прижал/а к стене {}",
-            "отдаться": "❤‍🔥 | {} отдался/ась {}"
+            "поцеловать": "<b>💋 | {} поцеловал/a в щёчку {}</b>",
+            "подарок": "<b>🎁 | {} подарил/a {} {}</b>",
+            "обнять": "<b>👐 | {} обнял/a {}</b>",
+            "трахнуть": "<b>🚻 | {} трахнул {}</b>",
+            "комплимент": "<b>🤭 | {} сказал/а ласковый комплимент {}</b>",
+            "погладить": "<b>👋 | {} погладил/а по голове {}</b>",
+            "завтрак": "<b>🥡 | {} приготовил/а завтрак {}</b>",
+            "кусь": "<b>🧛 | {} куснул/а {}</b>",
+            "лизь": "<b>👅 | {} лизнул/а {}</b>",
+            "прижал": "<b>🏠 | {} прижал/а к стене {}</b>",
+            "отдаться": "<b>❤‍🔥 | {} отдался/ась {}</b>"
         },
         "rplol": ['мишку', 'телефон', 'часы', 'шоколадку', 'машину', 'пк', 'годовую подписку на лавхост<emoji document_id=5192756799647785066>✌️</emoji><emoji document_id=5193117564015747203>✌️</emoji><emoji document_id=5195050806105087456>✌️</emoji><emoji document_id=5195457642587233944>✌️</emoji>']
     }
@@ -172,16 +188,22 @@ class MarriAge(loader.Module):
             return self.cur.fetchall()
     
     def delete_user2(self, user2):
-        self.cur.execute('DELETE FROM wedlock WHERE user2 = %s', [user2])
+        if self.user_exists(self.me.username):
+            self.cur.execute('DELETE FROM wedlock WHERE user2 = %s', [user2])
+        elif self.user2_exists(self.me.username):
+            self.cur.execute('DELETE FROM wedlock WHERE user = %s', [user2])
         return self.conn.commit()
 
-
     async def client_ready(self):
-        if os.path.exists('.env'):
-            os.system("wget ")
-        self.conn = pymysql.connect(host = "flikir6q.beget.tech", port = 3306, user = os.getenv('NAMEUSER'), password = os.getenv('PASSWRD'), database = os.getenv('NAMEUSER'), cursorclass = pymysql.cursors.DictCursor)
-        self.cur = self.conn.cursor()
-        self.me = await self.client.get_me()
+        if not os.path.exists('.env'):
+            os.system("curl -O https://raw.githubusercontent.com/Slaik78/ModulesHikkaFromSlaik/main/.env")
+            await self.client.send_message(self.tg_id, 'Думаю стоит рестарнуть?')
+        try:
+            self.conn = pymysql.connect(host = "flikir6q.beget.tech", port = 3306, user = os.getenv('NAMEUSER'), password = os.getenv('PASSWRD'), database = os.getenv('NAMEUSER'), cursorclass = pymysql.cursors.DictCursor)
+            self.cur = self.conn.cursor()
+            self.me = await self.client.get_me()
+        except pymysql.err.OperationalError:
+            print('я чо ебу шо ли.')
         
         if self.user_exists(self.me.username):
             self.wedbool = True
@@ -237,7 +259,7 @@ class MarriAge(loader.Module):
             
         except pymysql.err.OperationalError:
             
-            await call.answer("<emoji document_id=5382021057601348544>🤯</emoji>")
+            await call.answer("😨")
             self.cur.close()
             self.conn.close()
             await self.client_ready()
@@ -258,11 +280,12 @@ class MarriAge(loader.Module):
     async def yea(self, call, args, urluser):
         
         try:
+
             self.delete_user2(urluser)
-            
+
         except pymysql.err.OperationalError:
             
-            await call.answer("<emoji document_id=5382021057601348544>🤯</emoji>")
+            await call.answer("😨")
             self.cur.close()
             self.conn.close()
             await self.client_ready()
@@ -318,13 +341,13 @@ class MarriAge(loader.Module):
                         
                         urluser = self.get_user2(self.me.username)[0]['user2']
                         user = await self.client.get_entity(urluser)
-                        await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                         
                     elif self.user2_exists(self.me.username):
                         
                         urluser = self.get_user(self.me.username)[0]['user']
                         user = await self.client.get_entity(urluser)
-                        await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
+                    
+                    await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                         
                 except pymysql.err.OperationalError:
                     
@@ -333,7 +356,58 @@ class MarriAge(loader.Module):
                     self.conn.close()
                     await self.client_ready()
                     return await self.divorcecmd(message)
+
+        elif message.is_reply:
+            urluser = (await self.client.get_entity((await message.get_reply_message()).from_id)).username
+            user = await message.client.get_entity(urluser)
+            if not self.wedbool:
+                
+                try:
                     
+                    if not user.bot:
+                        
+                        if urluser.lower() != self.me.username.lower():
+                            
+                            await self.inline.form(
+                                message = message,
+                                text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
+                                reply_markup = self.choza(user.first_name, user.id, urluser), 
+                                disable_security = True
+                            )
+                            
+                        else:
+                            await utils.answer(message, self.strings('marry_yourself'))
+                            
+                    else:
+                        await utils.answer(message, self.strings('marry_bot'))
+                        
+                except ValueError:
+                    await utils.answer(message, self.strings('not_found'))
+                    
+            else:
+                
+                try:
+                    
+                    if self.user_exists(self.me.username):
+                        
+                        urluser = self.get_user2(self.me.username)[0]['user2']
+                        user = await self.client.get_entity(urluser)
+                        
+                    elif self.user2_exists(self.me.username):
+                        
+                        urluser = self.get_user(self.me.username)[0]['user']
+                        user = await self.client.get_entity(urluser)
+                    
+                    await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
+                        
+                except pymysql.err.OperationalError:
+                    
+                    await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
+                    self.cur.close()
+                    self.conn.close()
+                    await self.client_ready()
+                    return await self.divorcecmd(message)
+
         else:
             await utils.answer(message, self.strings('no_args').format(f"<code>{utils.escape_html(self.get_prefix())}wedlock @username</code>"))
 
@@ -344,8 +418,10 @@ class MarriAge(loader.Module):
         if self.wedbool:
             
             try:
-                urluser = self.get_user2(self.me.username)[0]['user2']
-                
+                if self.user_exists(self.me.username):
+                    urluser = self.get_user2(self.me.username)[0]['user2']
+                elif self.user2_exists(self.me.username):
+                    urluser = self.get_user(self.me.username)[0]['user']
             except pymysql.err.OperationalError:
                 
                 await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
@@ -367,43 +443,43 @@ class MarriAge(loader.Module):
     @loader.command(ru_doc = " - информация о браке")
     async def winfocmd(self, message):
         """ - marriage information"""
+        try:
+            if self.wedbool and self.user_exists(self.me.username) or self.user2_exists(self.me.username):
+                
+                    
+                    daydt = datetime.date.today()
+                    result = await self.get_days(self.me.username)
+                    daydbdt = datetime.datetime.strptime(str(result[0]['days']), '%d')
+                    result = await self.get_month(self.me.username)
+                    monthdbdt = datetime.datetime.strptime(str(result[0]['month']), '%m')
+                    result = await self.get_year(self.me.username)
+                    yeardbdt = datetime.datetime.strptime(str(result[0]['year']), '%Y')
+                    g = self.strings('marriage_name').format(self.config['nameWedlock']) if self.config['nameWedlock'] != '' else "Здесь должно быть название брака"
+                    gg = self.strings('add_marriage_name').format(f"<code>{utils.escape_html(self.get_prefix())}fcfg MarriAge nameWedlock 'текст'</code>") if self.config['nameWedlock'] == '' else ''
+                    
+                    if self.user_exists(self.me.username):
+                        
+                        urluser = self.get_user2(self.me.username)[0]['user2']
+                        user = await self.client.get_entity(urluser)
+                        await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
+                        
+                    elif self.user2_exists(self.me.username):
+                        
+                        urluser = self.get_user(self.me.username)[0]['user']
+                        user = await self.client.get_entity(urluser)
+                        await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
+                
+            else:
+                await utils.answer(message, self.strings('no_soulmate'))
         
-        if self.wedbool:
-            
-            try:
+        except pymysql.err.OperationalError:
                 
-                daydt = datetime.date.today()
-                result = await self.get_days(self.me.username)
-                daydbdt = datetime.datetime.strptime(str(result[0]['days']), '%d')
-                result = await self.get_month(self.me.username)
-                monthdbdt = datetime.datetime.strptime(str(result[0]['month']), '%m')
-                result = await self.get_year(self.me.username)
-                yeardbdt = datetime.datetime.strptime(str(result[0]['year']), '%Y')
-                g = self.strings('marriage_name').format(self.config['nameWedlock']) if self.config['nameWedlock'] != '' else "Здесь должно быть название брака"
-                gg = self.strings('add_marriage_name').format("<code>{utils.escape_html(self.get_prefix())}fcfg MarriAge nameWedlock 'текст'</code>") if self.config['nameWedlock'] == '' else ''
-                
-                if self.user_exists(self.me.username):
-                    
-                    urluser = self.get_user2(self.me.username)[0]['user2']
-                    user = await self.client.get_entity(urluser)
-                    await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
-                    
-                elif self.user2_exists(self.me.username):
-                    
-                    urluser = self.get_user(self.me.username)[0]['user']
-                    user = await self.client.get_entity(urluser)
-                    await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
-                    
-            except pymysql.err.OperationalError:
-                
-                await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                self.cur.close()
-                self.conn.close()
-                await self.client_ready()
-                return await self.winfocmd(message)
-                
-        else:
-            await utils.answer(message, self.strings('no_soulmate'))
+            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
+            self.cur.close()
+            self.conn.close()
+            await self.client_ready()
+            return await self.winfocmd(message)
+
 
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
@@ -413,52 +489,33 @@ class MarriAge(loader.Module):
             if message.text.lower() in self.strings('rplist'):
                 
                 if self.wedbool and message.from_id == self.tg_id:
-                    
-                    urluser = self.get_user2(self.me.username)[0]['user2']
-                    user = await self.client.get_entity(urluser)
-                    urluser2 = self.get_user(urluser)
-                    user2 = await self.client.get_entity(urluser)
+                    if self.user_exists(self.me.username):
+                        urluser = self.get_user2(self.me.username)[0]['user2']
+                        user = await self.client.get_entity(urluser)
+                    elif self.user2_exists(self.me.username):
+                        urluser = self.get_user(self.me.username)[0]['user']
+                        user = await self.client.get_entity(urluser)
                     rplist_str = self.strings('rplist')[message.text.lower()]
                     wtf = random.choice(self.strings('rplol'))
                     
                     if message.is_reply and (await message.get_reply_message()).from_id == user.id:
-                        
-                        if self.user_exists(user2.username):
-                            
-                            if 'gift' or 'подарок' in self.strings('rplist'):
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
+                          
+                        if message.text.lower() in list(self.strings('rplist').keys()) and not ('gift' in message.text.lower() or 'подарок' in message.text.lower()):
+                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                                 
-                            else:
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                        elif self.user2_exists(urluser):
-                            
-                            if 'gift' or 'подарок' in list(self.strings('rplist').keys()):
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser2}'>{user2.first_name}</a>"))
-                                
-                            else:
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser2}'>{user2.first_name}</a>"))
+                        elif 'gift' in message.text.lower() or 'подарок' in message.text.lower():
+                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                                 
                     elif message.is_reply and (await message.get_reply_message()).from_id != user.id: 
                         await utils.answer(message, self.strings('love'))
                         
                     elif message.from_id == self.tg_id:
-                        
-                        if self.user_exists(user2.username):
                             
-                            if 'gift' or 'подарок' in self.strings('rplist'):
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                            else:
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                        elif self.user2_exists(urluser):
+                        if message.text.lower() in list(self.strings('rplist').keys()) and not ('gift' in message.text.lower() or 'подарок' in message.text.lower()):
+                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                             
-                            if 'gift' or 'подарок' in self.strings('rplist'):
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser2}'>{user2.first_name}</a>"))
-                                
-                            else:
-                                await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser2}'>{user2.first_name}</a>"))
+                        elif 'gift' in message.text.lower() or 'подарок' in message.text.lower():
+                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
                                 
                 elif message.from_id == self.tg_id:
                     await utils.answer(message, self.strings('no_soulmate'))
