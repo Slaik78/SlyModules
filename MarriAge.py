@@ -60,10 +60,12 @@ class MarriAge(loader.Module):
         "cheat_on": "• <b>It's a pity that you want to silently cheat on {}</b>",
         "sure_divorce": "Are you sure you want to divorce with {}?\nMaybe it's not worth it?",
         "no_soulmate": "• <b>But you don't have a soulmate</b>",
+        "idk": "• <b>It's a pity you can't get married if the user has a soulmate</b>",
         "marriage_name": "• <b>The name of your marriage:</b> {}",
         "add_marriage_name": "\n\nJust type this command to add a marriage name {}",
         "married": "{}\n• You are married with {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days{}",
         "love": "• <b>Should not to use rp commands on others, works only with your soulmate</b>",
+        "must_be": "Marriage name must be here",
         "rplist": {
             "kiss": "<b>💋 | {} kissed {} on the cheek</b>",
             "gift": "<b>🎁 | {} gave a gift {} to {}</b>", 
@@ -106,10 +108,12 @@ class MarriAge(loader.Module):
         "cheat_on": "• <b>Жаль конечно что вы втихоря хотите променять {}</b>",
         "sure_divorce": "Вы точно хотите развестить с {}?\nМожет не стоит?",
         "no_soulmate": "• <b>Но у вас ведь нету второй половинки</b>",
+        "idk": "• <b>Увы но нельзя завести брак когда у пользователя есть другая половинка</b>",
         "marriage_name": "• <b>Название вашего брака:</b> {}",
         "add_marriage_name": "\n\nЧтоб добавить название для вашего брака просто введите команду {}",
         "married": "{}\n• Вы находитесь в браке вместе с {}\n• <b>Дата регистрации брака:</b> {} {} {} year\n• <b>Продолжительность брака:</b> {} дней{}",
         "love": "• <b>Эти рп команды работают только при реплее на вашей половинке или без реплея</b>",
+        "must_be": "Здесь должно быть имя брака",
         "rplist": {
             "поцеловать": "<b>💋 | {} поцеловал/a в щёчку {}</b>",
             "подарок": "<b>🎁 | {} подарил/a {} {}</b>",
@@ -147,7 +151,7 @@ class MarriAge(loader.Module):
         return bool(len(self.cur.fetchall()))
     
     def add_user_user2(self, user, user2, days, month, year):
-        self.cur.execute('INSERT INTO `wedlock` (`user`, `user2`, `days`, `month`, year) VALUES (%s, %s, %s, %s, %s)', [user, user2, days, month, year])
+        self.cur.execute('INSERT INTO `wedlock` (`user`, `user2`, `days`, `month`, `year`) VALUES (%s, %s, %s, %s, %s)', [user, user2, days, month, year])
         return self.conn.commit()
     
     def get_user(self, user):
@@ -199,12 +203,9 @@ class MarriAge(loader.Module):
         if not os.path.exists('.env'):
             os.system("curl -O https://raw.githubusercontent.com/Slaik78/ModulesHikkaFromSlaik/main/.env")
             await self.client.send_message(self.tg_id, 'Думаю стоит рестарнуть?')
-        try:
-            self.conn = pymysql.connect(host = "flikir6q.beget.tech", port = 3306, user = os.getenv('NAMEUSER'), password = os.getenv('PASSWRD'), database = os.getenv('NAMEUSER'), cursorclass = pymysql.cursors.DictCursor)
-            self.cur = self.conn.cursor()
-            self.me = await self.client.get_me()
-        except pymysql.err.OperationalError:
-            print('я чо ебу шо ли.')
+        self.conn = pymysql.connect(host = "flikir6q.beget.tech", port = 3306, user = os.getenv('NAMEUSER'), password = os.getenv('PASSWRD'), database = os.getenv('NAMEUSER'), cursorclass = pymysql.cursors.DictCursor)
+        self.cur = self.conn.cursor()
+        self.me = await self.client.get_me()
         
         if self.user_exists(self.me.username):
             self.wedbool = True
@@ -260,11 +261,14 @@ class MarriAge(loader.Module):
             
         except pymysql.err.OperationalError:
             
-            await call.answer("😨")
+            await call.answer("Думаю стоит ещё раз нажать")
             self.cur.close()
             self.conn.close()
             await self.client_ready()
-            return await self.wedlockcmd(message)
+            try:
+                return await self.wedlockcmd(message)
+            except NameError:
+                return
             
         await call.edit(self.strings('now_married').format(f"<a href='https://t.me/{urluser}'>{args}</a>"))
     
@@ -286,11 +290,14 @@ class MarriAge(loader.Module):
 
         except pymysql.err.OperationalError:
             
-            await call.answer("😨")
+            await call.answer("Думаю стоит ещё раз нажать")
             self.cur.close()
             self.conn.close()
             await self.client_ready()
-            return await self.divorcecmd(message)
+            try:
+                return await self.divorcecmd(message)
+            except NameError:
+                return
             
         self.wedbool = False
         await call.edit(self.strings('filed_to_divorce').format(f"<a href='https://t.me/{urluser}'>{args}</a>"))
@@ -316,18 +323,31 @@ class MarriAge(loader.Module):
                     
                     if not user.bot:
                         
-                        if urluser.lower() != self.me.username.lower():
-                            
-                            await self.inline.form(
-                                message = message,
-                                text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
-                                reply_markup = self.choza(user.first_name, user.id, urluser), 
-                                disable_security = True
-                            )
-                            
-                        else:
-                            await utils.answer(message, self.strings('marry_yourself'))
-                            
+                        try:
+
+                            if self.user_exists(self.me.username) or self.user2_exists(self.me.username):
+
+                                if urluser.lower() != self.me.username.lower():
+                                    
+                                    await self.inline.form(
+                                        message = message,
+                                        text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
+                                        reply_markup = self.choza(user.first_name, user.id, urluser), 
+                                        disable_security = True
+                                    )
+                                    
+                                else:
+                                    await utils.answer(message, self.strings('marry_yourself'))
+                            else:
+                                await utils.answer(message, self.strings('idk'))
+
+                        except pymysql.err.OperationalError:
+                    
+                            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
+                            self.cur.close()
+                            self.conn.close()
+                            await self.client_ready()
+                            return await self.wedlockcmd(message)
                     else:
                         await utils.answer(message, self.strings('marry_bot'))
                         
@@ -367,18 +387,33 @@ class MarriAge(loader.Module):
                     
                     if not user.bot:
                         
-                        if urluser.lower() != self.me.username.lower():
+                        try:
+
+                            if self.user_exists(self.me.username) or self.user2_exists(self.me.username):
                             
-                            await self.inline.form(
-                                message = message,
-                                text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
-                                reply_markup = self.choza(user.first_name, user.id, urluser), 
-                                disable_security = True
-                            )
+                                if urluser.lower() != self.me.username.lower():
+                                    
+                                    await self.inline.form(
+                                        message = message,
+                                        text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
+                                        reply_markup = self.choza(user.first_name, user.id, urluser), 
+                                        disable_security = True
+                                    )
+                                    
+                                else:
+                                    await utils.answer(message, self.strings('marry_yourself'))
                             
-                        else:
-                            await utils.answer(message, self.strings('marry_yourself'))
-                            
+                            else:
+                                await utils.answer(message, self.strings('idk'))
+                        
+                        except pymysql.err.OperationalError:
+                    
+                            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
+                            self.cur.close()
+                            self.conn.close()
+                            await self.client_ready()
+                            return await self.wedlockcmd(message)
+                        
                     else:
                         await utils.answer(message, self.strings('marry_bot'))
                         
@@ -455,7 +490,7 @@ class MarriAge(loader.Module):
                     monthdbdt = datetime.datetime.strptime(str(result[0]['month']), '%m')
                     result = await self.get_year(self.me.username)
                     yeardbdt = datetime.datetime.strptime(str(result[0]['year']), '%Y')
-                    g = self.strings('marriage_name').format(self.config['nameWedlock']) if self.config['nameWedlock'] != '' else "Здесь должно быть название брака"
+                    g = self.strings('marriage_name').format(self.config['nameWedlock']) if self.config['nameWedlock'] != '' else self.strings('must_be')
                     gg = self.strings('add_marriage_name').format(f"<code>{utils.escape_html(self.get_prefix())}fcfg MarriAge nameWedlock 'текст'</code>") if self.config['nameWedlock'] == '' else ''
                     
                     if self.user_exists(self.me.username):
