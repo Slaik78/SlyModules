@@ -13,7 +13,7 @@
 #------------------------------------------------------------------ 
 # meta developer: @hicota
 # translator: @jpshiro
-# requires: python-dotenv
+# requires: pymysql, python-dotenv
 
 import os
 import random
@@ -144,11 +144,17 @@ class MarriAge(loader.Module):
 
     def user_exists(self, user):
         self.cur.execute('SELECT id FROM `wedlock` WHERE `user` = %s', [user])
-        return bool(len(self.cur.fetchall()))
+        if self.cur.fetchone() == None:
+            return True
+        else:
+            return False
     
     def user2_exists(self, user):
         self.cur.execute('SELECT id FROM `wedlock` WHERE `user2` = %s', [user])
-        return bool(len(self.cur.fetchall()))
+        if self.cur.fetchone() == None:
+            return True
+        else:
+            return False
     
     def add_user_user2(self, user, user2, days, month, year):
         self.cur.execute('INSERT INTO `wedlock` (`user`, `user2`, `days`, `month`, `year`) VALUES (%s, %s, %s, %s, %s)', [user, user2, days, month, year])
@@ -203,7 +209,7 @@ class MarriAge(loader.Module):
         if not os.path.exists('.env'):
             os.system("curl -O https://raw.githubusercontent.com/Slaik78/ModulesHikkaFromSlaik/main/.env")
             await self.client.send_message(self.tg_id, 'Думаю стоит рестарнуть?')
-        self.conn = pymysql.connect(host = "flikir6q.beget.tech", port = 3306, user = os.getenv('NAMEUSER'), password = os.getenv('PASSWRD'), database = os.getenv('NAMEUSER'), cursorclass = pymysql.cursors.DictCursor)
+        self.conn = pymysql.connect(host="147.45.247.194", user=os.getenv("NAMEUSER"), passwd=os.getenv("PASSWRD"), db="default_db", port=3306, cursorclass = pymysql.cursors.DictCursor)
         self.cur = self.conn.cursor()
         self.me = await self.client.get_me()
         
@@ -325,7 +331,7 @@ class MarriAge(loader.Module):
                         
                         try:
 
-                            if self.user_exists(self.me.username) or self.user2_exists(self.me.username):
+                            if self.user_exists(urluser) or self.user2_exists(urluser):
 
                                 if urluser.lower() != self.me.username.lower():
                                     
@@ -389,7 +395,7 @@ class MarriAge(loader.Module):
                         
                         try:
 
-                            if self.user_exists(self.me.username) or self.user2_exists(self.me.username):
+                            if self.user_exists(urluser) or self.user2_exists(urluser):
                             
                                 if urluser.lower() != self.me.username.lower():
                                     
