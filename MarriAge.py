@@ -145,16 +145,16 @@ class MarriAge(loader.Module):
     def user_exists(self, user):
         self.cur.execute('SELECT id FROM `wedlock` WHERE `user` = %s', [user])
         if self.cur.fetchone() == None:
-            return True
-        else:
             return False
+        else:
+            return True
     
     def user2_exists(self, user):
         self.cur.execute('SELECT id FROM `wedlock` WHERE `user2` = %s', [user])
         if self.cur.fetchone() == None:
-            return True
-        else:
             return False
+        else:
+            return True
     
     def add_user_user2(self, user, user2, days, month, year):
         self.cur.execute('INSERT INTO `wedlock` (`user`, `user2`, `days`, `month`, `year`) VALUES (%s, %s, %s, %s, %s)', [user, user2, days, month, year])
@@ -331,7 +331,7 @@ class MarriAge(loader.Module):
                         
                         try:
 
-                            if self.user_exists(urluser) or self.user2_exists(urluser):
+                            if not self.user_exists(urluser) or not self.user2_exists(urluser):
 
                                 if urluser.lower() != self.me.username.lower():
                                     
@@ -395,7 +395,7 @@ class MarriAge(loader.Module):
                         
                         try:
 
-                            if self.user_exists(urluser) or self.user2_exists(urluser):
+                            if not self.user_exists(urluser) or not self.user2_exists(urluser):
                             
                                 if urluser.lower() != self.me.username.lower():
                                     
@@ -487,7 +487,6 @@ class MarriAge(loader.Module):
         """ - marriage information"""
         try:
             if self.wedbool and self.user_exists(self.me.username) or self.user2_exists(self.me.username):
-                
                     
                     daydt = datetime.date.today()
                     result = await self.get_days(self.me.username)
@@ -521,7 +520,10 @@ class MarriAge(loader.Module):
             self.conn.close()
             await self.client_ready()
             return await self.winfocmd(message)
-
+    
+    @loader.command()
+    async def llalcmd(self, message):
+        await message.respond(f"{await self.get_days(self.me.username)}")
 
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
