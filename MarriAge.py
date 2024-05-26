@@ -520,11 +520,7 @@ class MarriAge(loader.Module):
             self.conn.close()
             await self.client_ready()
             return await self.winfocmd(message)
-    
-    @loader.command()
-    async def llalcmd(self, message):
-        await message.respond(f"{await self.get_days(self.me.username)}")
-
+        
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
         
