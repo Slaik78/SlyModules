@@ -12,7 +12,7 @@
 #     \/__/         \/__/     \/__/                     \|__|   
 #------------------------------------------------------------------ 
 # meta developer: @Hicota
-
+# requires: pyyaml
 import yaml
 import json
 import re
