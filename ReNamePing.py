@@ -35,8 +35,12 @@ class ReNamePingMod(loader.Module):
             if a.startswith('config-'):
                 with open(a, 'r') as fh:
                     data = json.load(fh)
-        with open(f"{os.getcwd()}/hikka/langpacks/{data['hikka.translations']['lang']}.yml", 'r') as fh:
-            self.pinfo = yaml.safe_load(fh)
+        if 'hikka.translations' in data:
+            with open(f"{os.getcwd()}/hikka/langpacks/{data['hikka.translations']['lang']}.yml", 'r') as fh:
+                self.pinfo = yaml.safe_load(fh)
+        else:
+            with open(f"{os.getcwd()}/hikka/langpacks/en.yml", 'r') as fh:
+                self.pinfo = yaml.safe_load(fh)
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "RePing",
