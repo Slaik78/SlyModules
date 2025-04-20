@@ -69,7 +69,7 @@ class HerokuInfoMod(loader.Module):
             ),
         )
 
-    def _render_info(self, inline: bool) -> str:
+    def _render_info(self) -> str:
         try:
             repo = git.Repo(search_parent_directories=True)
             diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
