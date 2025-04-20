@@ -12,6 +12,7 @@
 #     \/__/         \/__/     \/__/                     \|__|   
 #------------------------------------------------------------------ 
 # meta developer: @Hicota
+# requires: pillow
 
 import glob
 import os
