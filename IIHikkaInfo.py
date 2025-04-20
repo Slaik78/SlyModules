@@ -12,11 +12,12 @@
 #     \/__/         \/__/     \/__/                     \|__|   
 #------------------------------------------------------------------ 
 # meta developer: @Hicota
-# requires: pillow
+# requires: Pillow
 
 import glob
 import os
 import requests
+import PIL
 from .. import loader
 
 @loader.tds
