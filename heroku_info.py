@@ -4,22 +4,21 @@
 # You can redistribute it and/or modify it under the terms of the GNU AGPLv3
 # 🔑 https://www.gnu.org/licenses/agpl-3.0.html
 
-# Module is still in test, there may be bugs
-# Modified by @Hicota
-
 import git
+import time
+import git
+import psutil
+import os
+import glob
+import requests
+
 from typing import Optional
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-from hikkatl.tl.types import Message
-from hikkatl.utils import get_display_name
-import requests
-import os
-import glob
-
+from herokutl.tl.types import Message 
+from herokutl.utils import get_display_name
 from .. import loader, utils, version
-from ..inline.types import InlineQuery
 import platform as lib_platform
 import getpass
 
@@ -41,17 +40,17 @@ class HerokuInfoMod(loader.Module):
                 "https://imgur.com/a/7LBPJiq.png",
                 lambda: self.strings("_cfg_banner"),
             ),
-            
-            loader.ConfigValue(
-                "pp_to_banner",
-                False,
-                validator=loader.validators.Boolean(),
-            ),
 
             loader.ConfigValue(
                 "show_heroku",
                 True,
                 validator=loader.validators.Boolean(),
+            ),
+            loader.ConfigValue(
+                "ping_emoji",
+                "🪐",
+                lambda: self.strings["ping_emoji"],
+                validator=loader.validators.String(),
             ),
             loader.ConfigValue(
                 "switchInfo",
@@ -69,20 +68,30 @@ class HerokuInfoMod(loader.Module):
             ),
         )
 
-    def _render_info(self, inline: bool) -> str:
+    def _get_os_name(self):
+        try:
+            with open("/etc/os-release", "r") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME"):
+                        return line.split("=")[1].strip().strip('"')
+        except FileNotFoundError:
+            return self.strings['non_detectable']
+
+
+    def _render_info(self, start: float) -> str:
         try:
             repo = git.Repo(search_parent_directories=True)
             diff = repo.git.log([f"HEAD..origin/{version.branch}", "--oneline"])
             upd = (
-                self.strings("update_required") if diff else self.strings("up-to-date")
+                self.strings("update_required").format(prefix=self.get_prefix()) if diff else self.strings("up-to-date")
             )
         except Exception:
             upd = ""
 
-        me = '<b><a href="tg://user?id={}">{}</a></b>'.format(
+        me = self.config['imgSettings'][0] if (self.config['imgSettings'][0] != "Лапокапканот") and self.config['switchInfo'] else '<b><a href="tg://user?id={}">{}</a></b>'.format(
             self._client.hikka_me.id,
             utils.escape_html(get_display_name(self._client.hikka_me)),
-        )
+        ).replace('{', '').replace('}', '')
         build = utils.get_commit_url()
         _version = f'<i>{".".join(list(map(str, list(version.__version__))))}</i>'
         prefix = f"«<code>{utils.escape_html(self.get_prefix())}</code>»"
@@ -103,10 +112,10 @@ class HerokuInfoMod(loader.Module):
             ("✌️", "<emoji document_id=5469986291380657759>✌️</emoji>"),
             ("💎", "<emoji document_id=5471952986970267163>💎</emoji>"),
             ("🛡", "<emoji document_id=5282731554135615450>🌩</emoji>"),
-            ("💘", "<emoji document_id=5452140079495518256>💘</emoji>"),
             ("🌼", "<emoji document_id=5224219153077914783>❤️</emoji>"),
             ("🎡", "<emoji document_id=5226711870492126219>🎡</emoji>"),
-            ("🐧", "<emoji document_id=5361541227604878624>🐧</emoji>")
+            ("🐧", "<emoji document_id=5361541227604878624>🐧</emoji>"),
+            ("🧃", "<emoji document_id=5422884965593397853>🧃</emoji>")
         ]:
             platform = platform.replace(emoji, icon)
         return (
@@ -128,6 +137,10 @@ class HerokuInfoMod(loader.Module):
                 branch=version.branch,
                 hostname=lib_platform.node(),
                 user=getpass.getuser(),
+                os=self._get_os_name() or self.strings('non_detectable'),
+                kernel=lib_platform.release(),
+                cpu=f"{psutil.cpu_count(logical=False)} ({psutil.cpu_count()}) core(-s); {psutil.cpu_percent()}% total",
+                ping=round((time.perf_counter_ns() - start) / 10**6, 3)
             )
             if self.config["custom_message"]
             else (
@@ -158,39 +171,8 @@ class HerokuInfoMod(loader.Module):
                 platform,
             )
         )
-
-    async def upload_pp_to_oxo(self, photo):
-        save_path = "profile_photo.jpg"
-        await self._client.download_media(photo, file=save_path)
-
-        try:
-            with open(save_path, 'rb') as file:
-                oxo = await utils.run_sync(
-                    requests.post,
-                    "https://0x0.st",
-                    files={"file": file},
-                    data={"secret": True},
-                )
-
-            if oxo.status_code == 200:
-                return oxo.text.strip()
-            else:
-                return "https://imgur.com/a/7LBPJiq.png"
-
-        except Exception:
-            return "https://imgur.com/H56KRbM"
-
-        finally:
-            if os.path.exists(save_path):
-                os.remove(save_path)
-
-    async def get_pp_for_banner(self):
-        photos = await self._client.get_profile_photos('me')
-        if photos:
-            return await self.upload_pp_to_oxo(photos[0])
-        return "https://imgur.com/a/7LBPJiq.png"
     
-    def _get_info_photo(self) -> Optional[Path]:
+    def _get_info_photo(self, start: float) -> Optional[Path]:
         imgform = self.config['bannerUrl'].split('.')[-1]
         imgset = self.config['imgSettings']
         if imgform in ['jpg', 'jpeg', 'png', 'bmp', 'webp']:
@@ -205,7 +187,7 @@ class HerokuInfoMod(loader.Module):
             draw = ImageDraw.Draw(img)
             draw.text(
                 (int(w/2), int(h/2)) if imgset[3] == '0|0' else tuple([int(i) for i in imgset[3].split('|')]),
-                f'{utils.remove_html(self._render_info())}', 
+                f'{utils.remove_html(self._render_info(start))}', 
                 anchor=imgset[4],
                 font=font,
                 fill=imgset[2] if imgset[2].startswith('#') else '#000',
@@ -249,31 +231,43 @@ class HerokuInfoMod(loader.Module):
 
     @loader.command()
     async def infocmd(self, message: Message):
-        if self.config.get('pp_to_banner', True):
-            print(self.config['bannerUrl'])
-            try:
-                new_bannerUrl = await self.get_pp_for_banner()
-                if new_bannerUrl:
-                    self.config['bannerUrl'] = new_bannerUrl
-                    await self._db.set("Config", "bannerUrl", new_bannerUrl)
-            except Exception:
-                pass
-        if self.config['switchInfo']:
-            if self._get_info_photo() is None:
+        start = time.perf_counter_ns()
+        
+        if self.config["custom_message"] is None:
+            await utils.answer_file(
+                message,
+                self.config["bannerUrl"],
+                self._render_info(start),
+                reply_to=getattr(message, "reply_to_msg_id", None),
+            )
+        elif '{ping}' in self.config["custom_message"]:
+            message = await utils.answer(message, self.config["ping_emoji"])
+            await utils.answer_file(
+                message,
+                self.config["bannerUrl"],
+                self._render_info(start),
+                reply_to=getattr(message, "reply_to_msg_id", None),
+            )
+        elif self.config['switchInfo']:
+            if self._get_info_photo(start) is None:
                 await utils.answer(
                     message, 
                     '<b>Incorrect image format</b>\n<blockquote>Поддерживаемые форматы -> jpg, jpeg, png, bmp, webp</blockquote>'
                 )
                 return
+            if '{ping}' in self.config["custom_message"]:
+                message = await utils.answer(message, self.config["ping_emoji"])
             await utils.answer_file(
                 message,
-                f'{utils.os.getcwd()}/assets/imginfo.{self.config["bannerUrl"].split(".")[-1]}'
+                f'{utils.os.getcwd()}/assets/imginfo.{self.config["bannerUrl"].split(".")[-1]}',
+                reply_to=getattr(message, "reply_to_msg_id", None),
             )
         else:
             await utils.answer_file(
                 message,
                 self.config["bannerUrl"],
-                self._render_info(False),
+                self._render_info(start),
+                reply_to=getattr(message, "reply_to_msg_id", None),
             )
 
     @loader.command()
