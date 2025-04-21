@@ -7,7 +7,10 @@
 # Module is still in test, there may be bugs
 # Modified by @Hicota
 
+import re
 import git
+import emoji
+from bs4 import BeautifulSoup
 from typing import Optional
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -55,6 +58,20 @@ class HikkaInfoMod(loader.Module):
                 ),
             ),
         )
+
+    def remove_emoji_and_html(self, text: str) -> str:
+        reg = r'<[^<]+?>'
+        text = f"{re.sub(reg, '', text)}"
+        allchars = [str for str in text]
+        emoji_list = [c for c in allchars if c in emoji.EMOJI_DATA]
+        clean_text = ''.join([str for str in text if not any(i in str for i in emoji_list)])
+        return clean_text
+    
+    def imgurpidor(self, url: str) -> str:
+        page = requests.get(url, stream=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"})
+        soup = BeautifulSoup(page.text, 'html.parser')
+        metatag = soup.find("meta", property="og:image")
+        return metatag['content']
 
     def _render_info(self) -> str:
         try:
@@ -142,7 +159,7 @@ class HikkaInfoMod(loader.Module):
         imgform = self.config['bannerUrl'].split('.')[-1]
         imgset = self.config['imgSettings']
         if imgform in ['jpg', 'jpeg', 'png', 'bmp', 'webp']:
-            response = requests.get(self.config['bannerUrl'])
+            response = requests.get(self.config['bannerUrl'] if not self.config['bannerUrl'].startswith('https://imgur') else self.imgurpidor(self.config['bannerUrl']), stream=True, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"})
             img = Image.open(BytesIO(response.content))
             font = ImageFont.truetype(
                 glob.glob(f'{os.getcwd()}/assets/font.*')[0], 
@@ -153,7 +170,7 @@ class HikkaInfoMod(loader.Module):
             draw = ImageDraw.Draw(img)
             draw.text(
                 (int(w/2), int(h/2)) if imgset[3] == '0|0' else tuple([int(i) for i in imgset[3].split('|')]),
-                f'{utils.remove_html(self._render_info())}', 
+                f"{self.remove_emoji_and_html(self._render_info())}", 
                 anchor=imgset[4],
                 font=font,
                 fill=imgset[2] if imgset[2].startswith('#') else '#000',
@@ -168,7 +185,7 @@ class HikkaInfoMod(loader.Module):
     
     @loader.command()
     async def insfont(self, message: Message):
-        "Install font"
+        "<Url|Reply to font> - Install font"
         if message.is_reply:
             reply = await message.get_reply_message()
             fontform = reply.document.mime_type.split("/")[1]
@@ -178,7 +195,7 @@ class HikkaInfoMod(loader.Module):
                     '<b>Incorrect font format</b>\n<blockquote>Поддерживаемые форматы -> otf, ttf</blockquote>'
                 )
                 return
-            origpath = f'{os.getcwd()}/assets/font.{fontform}'
+            origpath = glob.glob(f'{os.getcwd()}/assets/font.*')[0]
             ptf = f'{os.getcwd()}/font.{fontform}'
             os.rename(origpath, ptf)
             photo = await reply.download_media(origpath)
@@ -189,7 +206,24 @@ class HikkaInfoMod(loader.Module):
                     'Reply to font!'
                 )
                 return
-        os.remove(ptf)
+            os.remove(ptf)
+        elif utils.check_url(utils.get_args_raw(message)):
+            fontform = utils.get_args_raw(message).split('.')[-1]
+            if not fontform in ['ttf', 'otf']:
+                await utils.answer(
+                    message,
+                    '<b>Incorrect font format</b>\n<blockquote>Поддерживаемые форматы -> otf, ttf</blockquote>'
+                )
+                return
+            response = requests.get(utils.get_args_raw(message), stream=True)
+            os.remove(glob.glob(f'{os.getcwd()}/assets/font.*')[0])
+            with open(f'{os.getcwd()}/assets/font.{fontform}', 'wb') as file:
+                file.write(response.content)
+        else:
+            await utils.answer(
+                message,
+                '<b>Reply to font or </b>'
+            )
         await utils.answer(
             message,
             '<b>Font installed</b><emoji document_id=5436040291507247633>🎉</emoji>\nТеперь вы с удовольствием можете пользоваться им'
