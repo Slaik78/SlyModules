@@ -12,10 +12,11 @@
 #     \/__/         \/__/     \/__/                     \|__|   
 #------------------------------------------------------------------ 
 # meta developer: @Hicota
-# requires: Pillow
+# requires: Pillow, beautifulsoup4
 
 import glob
 import os
+import bs4
 import requests
 import PIL
 from .. import loader
