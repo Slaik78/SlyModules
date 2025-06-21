@@ -11,31 +11,71 @@
 #    \::/  /       \:\__\     /:/  /      \/__/        |:|  |    
 #     \/__/         \/__/     \/__/                     \|__|   
 #------------------------------------------------------------------ 
-# meta developer: @hicota
+# meta developer: @Hicota
 # translator: @jpshiro
-# requires: pymysql, python-dotenv
 
-import os
 import random
-import pymysql
 import datetime
-import pymysql.cursors
-from dotenv import load_dotenv
+import aiohttp
+import re
 
+from telethon.tl.types import PeerUser
 from .. import loader, utils
-from ..inline.types import InlineQuery
 
-load_dotenv()
+class DBWedding():
+    def __init__(self, base_url: str = "http://77.239.102.151:3400"):
+        self.base_url = base_url
+        self.session = aiohttp.ClientSession()
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc):
+        await self.session.close()
+
+    async def _make_request(self, method: str, endpoint: str, **kwargs):
+        url = f"{self.base_url}{endpoint}"
+        if kwargs.get('headers', {'X-API-KEY': True})['X-API-KEY'] is None:
+            raise Exception(f"API error: API key don't support NoneType, change key in module config")
+        async with self.session.request(method, url, **kwargs) as response:
+            if response.status != 200:
+                rjson = await response.json()
+                raise Exception(f"API error: {response.status} {rjson['detail']}")
+            return await response.json()
+        
+    async def get_apikey2(self, user_id: int) -> str:
+        endpoint = f"/api/get/user2"
+        params = {'tgid': user_id}
+        return await self._make_request("GET", endpoint, params=params)
+    
+    async def user_exists(self, api_key: str, user_id: int) -> bool:
+        endpoint = f"/api/{user_id}/exists"
+        headers = {"X-API-KEY": api_key}
+        return await self._make_request("GET", endpoint, headers=headers)
+    
+    async def add_users(self, api_key: str, u1: int, u2: int, days: int, month: int, year: int):
+        endpoint = "/api/addusers"
+        headers = {"X-API-KEY": api_key}
+        params = {"id": u1, "id2": u2, "days": days, "month": month, "year": year}
+        return await self._make_request("POST", endpoint, headers=headers, params=params)
+    
+    async def get_user_info(self, api_key: str):
+        endpoint = "/api/users/get"
+        headers = {"X-API-KEY": api_key}
+        return await self._make_request("GET", endpoint, headers=headers)
+    
+    async def delete_user(self, api_key: str):
+        endpoint = "/api/deluser"
+        headers = {"X-API-KEY": api_key}
+        return await self._make_request("DELETE", endpoint, headers=headers)
 
 @loader.tds
-class MarriAge(loader.Module):
-    """Женитесь на своей второй половинкe"""
-
+class Wedding(loader.Module):
+    """Живите счастливо со своей половинкой"""
 
     strings = {
-        "name": "MarriAge",
-        "call_marriage": "Call your marriage whatever you want",
+        "name": "Wedding",
+        "call_marriage": "Custom template for wedding information\nArguments: {yname} {hname} {year} {month} {day} {days}",
         "return": {
             "yes": {
                 1: "Yes, I sure",
@@ -49,7 +89,7 @@ class MarriAge(loader.Module):
         "decide_for": "Why do you decide for you soulmate?",
         "marry_not_you": "Someone is decided to marry but not you, come to terms with it",
         "now_married": "Congratulate, now you are married with {}",
-        "refused": "Alas but {} is refused you, maybe better luck next time 😢",
+        "refused": "Alas but {} is refused {}, maybe better luck next time 😢",
         "filed_to_divorce": "{}, your soulmate is filed to divorce 😢",
         "not_dare": "I knew that you wouldn't dare, that's right",
         "decided_marry": "{}, {} held a ring to you, perhaps he's want to marry you🥰",
@@ -61,11 +101,8 @@ class MarriAge(loader.Module):
         "sure_divorce": "Are you sure you want to divorce with {}?\nMaybe it's not worth it?",
         "no_soulmate": "• <b>But you don't have a soulmate</b>",
         "idk": "• <b>It's a pity you can't get married if the user has a soulmate</b>",
-        "marriage_name": "• <b>The name of your marriage:</b> {}",
-        "add_marriage_name": "\n\nJust type this command to add a marriage name {}",
-        "married": "{}\n• You are married with {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days{}",
+        "married": "• marriage between {} and {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days{}",
         "love": "• <b>Should not to use rp commands on others, works only with your soulmate</b>",
-        "must_be": "Marriage name must be here",
         "rplist": {
             "kiss": "<b>💋 | {} kissed {} on the cheek</b>",
             "gift": "<b>🎁 | {} gave a gift {} to {}</b>", 
@@ -79,11 +116,14 @@ class MarriAge(loader.Module):
             "push": "<b>🏠 | {} pushed {} against a wall</b>",
             "gave": "<b>❤‍🔥 | {} gave himself to {}</b>"
         },
-        "rplol": ['teddy', 'phone', 'watch', 'chocolate', 'car', 'pc', 'annual subscription to lavhost<emoji document_id=5192756799647785066>✌️</emoji><emoji document_id=5193117564015747203>✌️</emoji><emoji document_id=5195050806105087456>✌️</emoji><emoji document_id=5195457642587233944>✌️</emoji>']
+        "rplol": ['teddy', 'phone', 'watch', 'chocolate', 'car', 'pc', 'annual subscription to lavhost<emoji document_id=5192756799647785066>✌️</emoji><emoji document_id=5193117564015747203>✌️</emoji><emoji document_id=5195050806105087456>✌️</emoji><emoji document_id=5195457642587233944>✌️</emoji>'],
+        "api_key": 'Key to make module work, you can get it by writing command /apikey to bot @HicotоchkaBot',
+        "api_error": 'Oops.. error occurred ➡ <code>{}</code>',
+        "rphelp": '↓ Mini list of RP-commands ↓\n\n'
     }
 
     strings_ru = {
-        "call_marriage": "Назовите свой брак как вам в душе хочется",
+        "call_marriage": "Кастомный шаблон для информации брака\nАргументы: {yname} {hname} {year} {month} {day} {days}",
         "return": {
             "yes": {
                 1: "Да, я уверен",
@@ -97,10 +137,10 @@ class MarriAge(loader.Module):
         "decide_for": "Зачем ты решаешь за свою вторую половинку?",
         "marry_not_you": "Не с вами решили завести брак, смиритесь",
         "now_married": "Поздравляю, вы теперь состоите в браке вместе с {}",
-        "refused": "Увы но {} отказал вам, может следующий раз повезёт вам 😢",
-        "filed_to_divorce": "{}, ваша половинка подала развод на вас 😢",
+        "refused": "Увы но {} отказал {}, может в следующий раз повезёт😢",
+        "filed_to_divorce": "{}, ваша половинка подала развод на вас😢",
         "not_dare": "Я знал что вы на это не решитесь, и правильно",
-        "decided_marry":  "{}, {} протянул колечко к вам, похоже он хочет завести с вам брак🥰",
+        "decided_marry":  "{}, {} протягивает колечко к вам, он хочет быть с вами до старости, вы согласны?",
         "marry_yourself": "• <b>Игры с самолюбовью не принимаются</b>",
         "marry_bot": "• <b>Не пытайтесь завести брак с ботом</b>",
         "not_found": "• <b>А вы кого ищите то?</b>",
@@ -109,11 +149,8 @@ class MarriAge(loader.Module):
         "sure_divorce": "Вы точно хотите развестить с {}?\nМожет не стоит?",
         "no_soulmate": "• <b>Но у вас ведь нету второй половинки</b>",
         "idk": "• <b>Увы но нельзя завести брак когда у пользователя есть другая половинка</b>",
-        "marriage_name": "• <b>Название вашего брака:</b> {}",
-        "add_marriage_name": "\n\nЧтоб добавить название для вашего брака просто введите команду {}",
-        "married": "{}\n• Вы находитесь в браке вместе с {}\n• <b>Дата регистрации брака:</b> {} {} {} year\n• <b>Продолжительность брака:</b> {} дней{}",
-        "love": "• <b>Эти рп команды работают только при реплее на вашей половинке или без реплея</b>",
-        "must_be": "Здесь должно быть имя брака",
+        "married": "• Брак между {} и {}\n• <b>Дата регистрации брака:</b> {} {} {} year\n• <b>Продолжительность брака:</b> {} дней",
+        "love": "• <b>Рп команды работают только при реплее на второй половинке или без реплея</b>",
         "rplist": {
             "поцеловать": "<b>💋 | {} поцеловал/a в щёчку {}</b>",
             "подарок": "<b>🎁 | {} подарил/a {} {}</b>",
@@ -127,103 +164,39 @@ class MarriAge(loader.Module):
             "прижал": "<b>🏠 | {} прижал/а к стене {}</b>",
             "отдаться": "<b>❤‍🔥 | {} отдался/ась {}</b>"
         },
-        "rplol": ['мишку', 'телефон', 'часы', 'шоколадку', 'машину', 'пк', 'годовую подписку на лавхост<emoji document_id=5192756799647785066>✌️</emoji><emoji document_id=5193117564015747203>✌️</emoji><emoji document_id=5195050806105087456>✌️</emoji><emoji document_id=5195457642587233944>✌️</emoji>']
+        "rplol": ['мишку', 'телефон', 'часы', 'шоколадку', 'машину', 'пк', 'годовую подписку на любой из хостингов, только сегодня и только сейчас, не упустите это шанс😁'],
+        "api_key": 'Ключ чтобы модуль работал, получить его можно написав боту @HicotоchkaBot команду /apikey',
+        "api_error": 'Упс.. Вылетела ошибка ➡ <code>{}</code>',
+        "rphelp": '↓ Мини лист рп-команд ↓\n\n'
     }
 
-    wedbool = False
-    
+    mrg = DBWedding()
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
-                "nameWedlock",
+                "BlockWedlock",
                 None,
-                lambda: self.string('call_marriage'),
+                lambda: self.strings('call_marriage'),
                 validator = loader.validators.String()
             ),
+            loader.ConfigValue(
+                "API-KEY",
+                None, 
+                lambda: self.strings("api_key"),
+                validator = loader.validators.Hidden()
+            )
         )
 
-    def user_exists(self, user):
-        self.cur.execute('SELECT id FROM `wedlock` WHERE `user` = %s', [user])
-        if self.cur.fetchone() == None:
-            return False
-        else:
-            return True
+    async def on_dlmod(self):
+        resp = (await self.mrg.get_apikey2((await self.client.get_me()).id))
+        if not resp is None:
+            self.config['API-KEY'] = resp
     
-    def user2_exists(self, user):
-        self.cur.execute('SELECT id FROM `wedlock` WHERE `user2` = %s', [user])
-        if self.cur.fetchone() == None:
-            return False
-        else:
-            return True
-    
-    def add_user_user2(self, user, user2, days, month, year):
-        self.cur.execute('INSERT INTO `wedlock` (`user`, `user2`, `days`, `month`, `year`) VALUES (%s, %s, %s, %s, %s)', [user, user2, days, month, year])
-        return self.conn.commit()
-    
-    def get_user(self, user):
-        self.cur.execute('SELECT `user` FROM `wedlock` WHERE `user2` = %s', [user])
-        return self.cur.fetchall()
-    
-    def get_user2(self, user):
-        self.cur.execute('SELECT `user2` FROM `wedlock` WHERE `user` = %s', [user])
-        return self.cur.fetchall()
-    
-    async def get_days(self, user):
-        
-        if self.user_exists(self.me.username):
-            self.cur.execute('SELECT `days` FROM `wedlock` WHERE `user` = %s', [user])
-            return self.cur.fetchall()
-            
-        elif self.user2_exists(self.me.username):
-            self.cur.execute('SELECT `days` FROM `wedlock` WHERE `user2` = %s', [user])
-            return self.cur.fetchall()
-    
-    async def get_month(self, user):
-        
-        if self.user_exists(self.me.username):
-            self.cur.execute('SELECT `month` FROM `wedlock` WHERE `user` = %s', [user])
-            return self.cur.fetchall()
-            
-        elif self.user2_exists(self.me.username):
-            self.cur.execute('SELECT `month` FROM `wedlock` WHERE `user2` = %s', [user])
-            return self.cur.fetchall()
-    
-    async def get_year(self, user):
-        
-        if self.user_exists(self.me.username):
-            self.cur.execute('SELECT `year` FROM `wedlock` WHERE `user` = %s', [user])
-            return self.cur.fetchall()
-            
-        elif self.user2_exists(self.me.username):
-            self.cur.execute('SELECT `year` FROM `wedlock` WHERE `user2` = %s', [user])
-            return self.cur.fetchall()
-    
-    def delete_user2(self, user2):
-        if self.user_exists(self.me.username):
-            self.cur.execute('DELETE FROM wedlock WHERE user2 = %s', [user2])
-        elif self.user2_exists(self.me.username):
-            self.cur.execute('DELETE FROM wedlock WHERE user = %s', [user2])
-        return self.conn.commit()
-
     async def client_ready(self):
-        if not os.path.exists('.env'):
-            os.system("curl -O https://raw.githubusercontent.com/Slaik78/ModulesHikkaFromSlaik/main/.env")
-            await self.client.send_message(self.tg_id, 'Думаю стоит рестарнуть?')
-        self.conn = pymysql.connect(host="147.45.247.194", user=os.getenv("NAMEUSER"), passwd=os.getenv("PASSWRD"), db="default_db", port=3306, cursorclass = pymysql.cursors.DictCursor)
-        self.cur = self.conn.cursor()
         self.me = await self.client.get_me()
-        
-        if self.user_exists(self.me.username):
-            self.wedbool = True
-            
-        elif self.user2_exists(self.me.username):
-            self.wedbool = True
-            
-        else:
-            self.wedbool = False
+
 
     def lenok(self, args, urluser):
-        
         return [
             {
                 "text": self.strings('return')['yes'][1], 
@@ -236,334 +209,165 @@ class MarriAge(loader.Module):
             }
         ]
 
-    def choza(self, args, uid, urluser):
-        
+    def choza(self, args, uid):
         return [
             {
                 "text": self.strings('return')['yes'][2],
                 "callback": self.yes,
-                "args": (args, uid, urluser)
+                "args": (args, uid)
             },
             {
                 "text": self.strings('return')['no'][2],
                 "callback": self.no,
-                "args": (args, uid, urluser)
+                "args": (args, uid)
             }
         ]    
     
-    async def yes(self, call, args, uid, urluser):
-        
+    async def yes(self, call, args, uid):
         if call.from_user.id == self._tg_id:
             return await call.answer(self.strings('decide_for'))
-            
         elif uid != call.from_user.id:
             return await call.answer(self.strings('marry_not_you'))
-            
-        self.wedbool = True
         daydt = datetime.date.today()
-        
-        try:
-            self.add_user_user2(self.me.username, urluser, daydt.day, daydt.month, daydt.year)
-            
-        except pymysql.err.OperationalError:
-            
-            await call.answer("Думаю стоит ещё раз нажать")
-            self.cur.close()
-            self.conn.close()
-            await self.client_ready()
-            try:
-                return await self.wedlockcmd(message)
-            except NameError:
-                return
-            
-        await call.edit(self.strings('now_married').format(f"<a href='https://t.me/{urluser}'>{args}</a>"))
+        resp = (await self.mrg.add_users(self.config['API-KEY'], self.me.id, uid, daydt.day, daydt.month, daydt.year))
+        if resp['message'].startswith('Users added'): 
+            await call.edit(self.strings('now_married').format(f"<a href='tg://user?id={uid}'>{args}</a>"))
+        elif resp['message'].startswith('🚫 <b>API Error'):
+            await call.edit(self.strings('api_error').format(resp['message']))
     
-    async def no(self, call, args, uid, urluser):
-        
+    async def no(self, call, args, uid):
         if call.from_user.id == self._tg_id:
             return await call.answer(self.strings('decide_for'))
-            
         elif uid != call.from_user.id:
             return await call.answer(self.strings('marry_not_you'))
-            
-        await call.edit(self.strings('refused').format(f"<a href='https://t.me/{urluser}'>{args}</a>"))
+        await call.edit(self.strings('refused').format(f"<a href='tg://user?id={uid}'>{args}</a>", f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>"))
 
     async def yea(self, call, args, urluser):
-        
-        try:
-
-            self.delete_user2(urluser)
-
-        except pymysql.err.OperationalError:
-            
-            await call.answer("Думаю стоит ещё раз нажать")
-            self.cur.close()
-            self.conn.close()
-            await self.client_ready()
-            try:
-                return await self.divorcecmd(message)
-            except NameError:
-                return
-            
-        self.wedbool = False
-        await call.edit(self.strings('filed_to_divorce').format(f"<a href='https://t.me/{urluser}'>{args}</a>"))
+        resp = (await self.mrg.delete_user(self.config['API-KEY']))
+        if resp['message'].startswith('User data'):
+            await call.edit(self.strings('filed_to_divorce').format(f"<a href='tg://user?id={urluser}'>{args}</a>"))
+        elif resp['message'].startswith('🚫 <b>API Error'):
+            await call.edit(self.strings('api_error').format(resp['message']))
     
     async def nothing(self, call):
         await call.edit(self.strings('not_dare'))
 
+    async def dayscount(self, datedb, datenow):
+        days = 0
+        current_date = datedb.date()
+        while current_date <= datenow:
+            days += 1
+            current_date += datetime.timedelta(days=1)
+        return days - 1
+    
+    async def checkuser(self, m, args: str):
+        try:
+            if args:
+                if args.isdigit():
+                    return await self.client.get_entity(args[0])
+                else:
+                    args = args.split(' ', 1)[0].replace('@', '').lower()
+                    return await self.client.get_entity(args[0])
+            elif m.is_reply:
+                return (await m.get_reply_message()).sender
+            else:
+                await utils.answer(m, self.strings('no_args').format(f"<code>{utils.escape_html(self.get_prefix())}wedlock @username</code>"))
+        except ValueError:
+            await utils.answer(m, self.strings('not_found'))
+
     @loader.command(ru_doc = " - сделать предложение")
     async def wedlockcmd(self, message):
         """ - make a proposal"""
-        
         args = utils.get_args_raw(message)
-        
-        if args:
-            
-            args = args.split(' ', 1)
-            urluser = args[0].replace('@', '')
-            user = await message.client.get_entity(args[0])
-            
-            if not self.wedbool:
-                
-                try:
-                    
-                    if not user.bot:
-                        
-                        try:
-
-                            if not self.user_exists(urluser) or not self.user2_exists(urluser):
-
-                                if urluser.lower() != self.me.username.lower():
-                                    
-                                    await self.inline.form(
-                                        message = message,
-                                        text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
-                                        reply_markup = self.choza(user.first_name, user.id, urluser), 
-                                        disable_security = True
-                                    )
-                                    
-                                else:
-                                    await utils.answer(message, self.strings('marry_yourself'))
-                            else:
-                                await utils.answer(message, self.strings('idk'))
-
-                        except pymysql.err.OperationalError:
-                    
-                            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                            self.cur.close()
-                            self.conn.close()
-                            await self.client_ready()
-                            return await self.wedlockcmd(message)
+        user = await self.checkuser(message, args)
+        if not (await self.mrg.user_exists(self.config['API-KEY'], self.me.id)):
+            if not user.bot:
+                if not (await self.mrg.user_exists(self.config['API-KEY'], user.id)):
+                    if user.id != self.me.id:
+                        await self.inline.form(
+                            message = message,
+                            text = self.strings('decided_marry').format(f"<a href='tg://user?id={user.id}'>{utils.escape_html(user.first_name)}</a>", f'<a href="tg://user?id={self.me.id}">{utils.escape_html(self.me.first_name)}</a>'),
+                            reply_markup = self.choza(utils.escape_html(user.first_name), user.id), 
+                            disable_security = True
+                        )
                     else:
-                        await utils.answer(message, self.strings('marry_bot'))
-                        
-                except ValueError:
-                    await utils.answer(message, self.strings('not_found'))
-                    
+                        await utils.answer(message, self.strings('marry_yourself'))
+                else:
+                    await utils.answer(message, self.strings('idk'))
             else:
-                
-                try:
-                    
-                    if self.user_exists(self.me.username):
-                        
-                        urluser = self.get_user2(self.me.username)[0]['user2']
-                        user = await self.client.get_entity(urluser)
-                        
-                    elif self.user2_exists(self.me.username):
-                        
-                        urluser = self.get_user(self.me.username)[0]['user']
-                        user = await self.client.get_entity(urluser)
-                    
-                    await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                        
-                except pymysql.err.OperationalError:
-                    
-                    await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                    self.cur.close()
-                    self.conn.close()
-                    await self.client_ready()
-                    return await self.divorcecmd(message)
-
-        elif message.is_reply:
-            urluser = (await self.client.get_entity((await message.get_reply_message()).from_id)).username
-            user = await message.client.get_entity(urluser)
-            if not self.wedbool:
-                
-                try:
-                    
-                    if not user.bot:
-                        
-                        try:
-
-                            if not self.user_exists(urluser) or not self.user2_exists(urluser):
-                            
-                                if urluser.lower() != self.me.username.lower():
-                                    
-                                    await self.inline.form(
-                                        message = message,
-                                        text = self.strings('decided_marry').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", f'<a href="https://t.me/{self.me.username}">{self.me.first_name}</a>'),
-                                        reply_markup = self.choza(user.first_name, user.id, urluser), 
-                                        disable_security = True
-                                    )
-                                    
-                                else:
-                                    await utils.answer(message, self.strings('marry_yourself'))
-                            
-                            else:
-                                await utils.answer(message, self.strings('idk'))
-                        
-                        except pymysql.err.OperationalError:
-                    
-                            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                            self.cur.close()
-                            self.conn.close()
-                            await self.client_ready()
-                            return await self.wedlockcmd(message)
-                        
-                    else:
-                        await utils.answer(message, self.strings('marry_bot'))
-                        
-                except ValueError:
-                    await utils.answer(message, self.strings('not_found'))
-                    
-            else:
-                
-                try:
-                    
-                    if self.user_exists(self.me.username):
-                        
-                        urluser = self.get_user2(self.me.username)[0]['user2']
-                        user = await self.client.get_entity(urluser)
-                        
-                    elif self.user2_exists(self.me.username):
-                        
-                        urluser = self.get_user(self.me.username)[0]['user']
-                        user = await self.client.get_entity(urluser)
-                    
-                    await utils.answer(message, self.strings('cheat_on').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                        
-                except pymysql.err.OperationalError:
-                    
-                    await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                    self.cur.close()
-                    self.conn.close()
-                    await self.client_ready()
-                    return await self.divorcecmd(message)
-
+                await utils.answer(message, self.strings('marry_bot'))  
         else:
-            await utils.answer(message, self.strings('no_args').format(f"<code>{utils.escape_html(self.get_prefix())}wedlock @username</code>"))
+            urluser = (await self.mrg.get_user_info(self.config['API-KEY']))['users']
+            urluser = urluser[next((key for key, value in urluser.items() if value != self.me.id), None)]
+            user = await self.client.get_entity(urluser)
+            await utils.answer(message, self.strings('cheat_on').format(f"<a href='{urluser}'>{user.first_name}</a>"))
 
     @loader.command(ru_doc = " - подать на развод")
     async def divorcecmd(self, message):
         """ - file to divorce"""
-        
-        if self.wedbool:
-            
-            try:
-                if self.user_exists(self.me.username):
-                    urluser = self.get_user2(self.me.username)[0]['user2']
-                elif self.user2_exists(self.me.username):
-                    urluser = self.get_user(self.me.username)[0]['user']
-            except pymysql.err.OperationalError:
-                
-                await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-                self.cur.close()
-                self.conn.close()
-                await self.client_ready()
-                return await self.divorcecmd(message)
-                
+        if (await self.mrg.user_exists(self.config['API-KEY'], self.me.id)):
+            urluser = (await self.mrg.get_user_info(self.config['API-KEY']))['users']
+            urluser = urluser[next((key for key, value in urluser.items() if value != self.me.id), None)]
             user = await self.client.get_entity(urluser)
             await self.inline.form(
                 message = message,
-                text = self.strings('sure_divorce').format(f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"),
+                text = self.strings('sure_divorce').format(f"<a href='tg://user?id={urluser}'>{user.first_name}</a>"),
                 reply_markup = self.lenok(user.first_name, urluser)
             )
-            
         else:
             await utils.answer(message, self.strings('no_soulmate'))
     
     @loader.command(ru_doc = " - информация о браке")
     async def winfocmd(self, message):
         """ - marriage information"""
-        try:
-            if self.wedbool and self.user_exists(self.me.username) or self.user2_exists(self.me.username):
-                    
-                    daydt = datetime.date.today()
-                    result = await self.get_days(self.me.username)
-                    daydbdt = datetime.datetime.strptime(str(result[0]['days']), '%d')
-                    result = await self.get_month(self.me.username)
-                    monthdbdt = datetime.datetime.strptime(str(result[0]['month']), '%m')
-                    result = await self.get_year(self.me.username)
-                    yeardbdt = datetime.datetime.strptime(str(result[0]['year']), '%Y')
-                    g = self.strings('marriage_name').format(self.config['nameWedlock']) if self.config['nameWedlock'] != '' else self.strings('must_be')
-                    gg = self.strings('add_marriage_name').format(f"<code>{utils.escape_html(self.get_prefix())}fcfg MarriAge nameWedlock 'текст'</code>") if self.config['nameWedlock'] == '' else ''
-                    
-                    if self.user_exists(self.me.username):
-                        
-                        urluser = self.get_user2(self.me.username)[0]['user2']
-                        user = await self.client.get_entity(urluser)
-                        await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
-                        
-                    elif self.user2_exists(self.me.username):
-                        
-                        urluser = self.get_user(self.me.username)[0]['user']
-                        user = await self.client.get_entity(urluser)
-                        await utils.answer(message, self.strings('married').format(g, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>", daydbdt.day, monthdbdt.strftime('%B'), yeardbdt.year, daydt.day - daydbdt.day, gg))
-                
+        if (await self.mrg.user_exists(self.config['API-KEY'], self.me.id)):
+            datenow = datetime.date.today()
+            dateinfo = (await self.mrg.get_user_info(self.config['API-KEY']))['date']
+            datedb = datetime.datetime.strptime(F'{dateinfo["year"]}-{dateinfo["month"]}-{dateinfo["days"]}', '%Y-%m-%d')
+            days = await self.dayscount(datedb, datenow)
+            if (await self.mrg.user_exists(self.config['API-KEY'], self.me.id)):
+                urluser = (await self.mrg.get_user_info(self.config['API-KEY']))['users']
+                urluser = urluser[next((key for key, value in urluser.items() if value != self.me.id), None)]
+                user = await self.client.get_entity(urluser)
+                if self.config['BlockWedlock']:
+                    await utils.answer(message, self.config['BlockWedlock'].format(yname=f"<a href='tg://user?id={urluser}'>{user.first_name}</a>", hname=f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", day=datedb.day, month=datedb.strftime('%B'), year=datedb.year, days=days))
+                else:
+                    await utils.answer(message, self.strings('married').format(f"<a href='tg://user?id={urluser}'>{user.first_name}</a>", f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", datedb.day, datedb.strftime('%B'), datedb.year, days))
+        else:
+            await utils.answer(message, self.strings('no_soulmate'))
+
+    @loader.command(ru_doc = " - Лист РП-команд ")
+    async def rplistcmd(self, message):
+        ' - RP-Commands list'
+        text = self.strings('rphelp')
+        for key, value in self.strings('rplist').items():
+            if re.search(r'^gift$|^подарок$', key):
+                text += f"{key} > {value.format('OneName', 'Gift', 'TwoName')}\n"
             else:
-                await utils.answer(message, self.strings('no_soulmate'))
-        
-        except pymysql.err.OperationalError:
-                
-            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-            self.cur.close()
-            self.conn.close()
-            await self.client_ready()
-            return await self.winfocmd(message)
+                text += f"{key} > {value.format('OneName', 'TwoName')}\n"
+        await message.edit(text)
         
     @loader.watcher(only_messages = True)
     async def watcher(self, message):
-        
-        try:
-            
-            if message.text.lower() in self.strings('rplist'):
-                
-                if self.wedbool and message.from_id == self.tg_id:
-                    if self.user_exists(self.me.username):
-                        urluser = self.get_user2(self.me.username)[0]['user2']
-                        user = await self.client.get_entity(urluser)
-                    elif self.user2_exists(self.me.username):
-                        urluser = self.get_user(self.me.username)[0]['user']
-                        user = await self.client.get_entity(urluser)
-                    rplist_str = self.strings('rplist')[message.text.lower()]
-                    wtf = random.choice(self.strings('rplol'))
-                    
-                    if message.is_reply and (await message.get_reply_message()).from_id == user.id:
-                          
-                        if message.text.lower() in list(self.strings('rplist').keys()) and not ('gift' in message.text.lower() or 'подарок' in message.text.lower()):
-                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                        elif 'gift' in message.text.lower() or 'подарок' in message.text.lower():
-                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                    elif message.is_reply and (await message.get_reply_message()).from_id != user.id: 
-                        await utils.answer(message, self.strings('love'))
-                        
-                    elif message.from_id == self.tg_id:
-                            
-                        if message.text.lower() in list(self.strings('rplist').keys()) and not ('gift' in message.text.lower() or 'подарок' in message.text.lower()):
-                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                            
-                        elif 'gift' in message.text.lower() or 'подарок' in message.text.lower():
-                            await utils.answer(message, rplist_str.format(f"<a href='https://t.me/{self.me.username}'>{self.me.first_name}</a>", wtf, f"<a href='https://t.me/{urluser}'>{user.first_name}</a>"))
-                                
-                elif message.from_id == self.tg_id:
-                    await utils.answer(message, self.strings('no_soulmate'))
-                    
-        except pymysql.err.OperationalError:
-                
-            await utils.answer(message, "<emoji document_id=5382021057601348544>🤯</emoji>")
-            self.cur.close()
-            self.conn.close()
-            await self.client_ready()
-            return await self.watcher(message)
+        if message.text.lower() in self.strings('rplist').keys():
+            mfi = message.from_id.user_id if isinstance(message.from_id, PeerUser) else message.from_id
+            if (await self.mrg.user_exists(self.config['API-KEY'], self.me.id)) and mfi == self.tg_id:
+                urluser = (await self.mrg.get_user_info(self.config['API-KEY']))['users']
+                urluser = urluser[next((key for key, value in urluser.items() if value != self.me.id), None)]
+                user = await self.client.get_entity(urluser)
+                rplist_str = self.strings('rplist')[message.text.lower()]
+                wtf = random.choice(self.strings('rplol'))
+                if message.is_reply and (await message.get_reply_message()).sender.id == user.id:
+                    if message.text.lower() in list(self.strings('rplist').keys()) and not re.search(r'^gift$|^подарок$', message.text.lower()):
+                        await utils.answer(message, rplist_str.format(f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", f"<a href='tg://user?id={urluser}'>{user.first_name}</a>"))    
+                    elif re.search(r'^gift$|^подарок$', message.text.lower()):
+                        await utils.answer(message, rplist_str.format(f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", wtf, f"<a href='tg://user?id={urluser}'>{user.first_name}</a>"))
+                elif message.is_reply and (await message.get_reply_message()).sender.id != user.id: 
+                    await utils.answer(message, self.strings('love'))
+                elif mfi == self.tg_id:
+                    if message.text.lower() in list(self.strings('rplist').keys()) and not re.search(r'^gift$|^подарок$', message.text.lower()):
+                        await utils.answer(message, rplist_str.format(f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", f"<a href='tg://user?id={urluser}'>{user.first_name}</a>"))
+                    elif re.search(r'^gift$|^подарок$', message.text.lower()):
+                        await utils.answer(message, rplist_str.format(f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", wtf, f"<a href='tg://user?id={urluser}'>{user.first_name}</a>"))
+            elif mfi == self.tg_id:
+                await utils.answer(message, self.strings('no_soulmate'))
