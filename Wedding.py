@@ -101,7 +101,7 @@ class Wedding(loader.Module):
         "sure_divorce": "Are you sure you want to divorce with {}?\nMaybe it's not worth it?",
         "no_soulmate": "• <b>But you don't have a soulmate</b>",
         "idk": "• <b>It's a pity you can't get married if the user has a soulmate</b>",
-        "married": "• marriage between {} and {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days{}",
+        "married": "• marriage between {} and {}\n• <b>Marriage date registration:</b> {} {} {} year\n• <b>Marriage duration:</b> {} days",
         "love": "• <b>Should not to use rp commands on others, works only with your soulmate</b>",
         "rplist": {
             "kiss": "<b>💋 | {} kissed {} on the cheek</b>",
