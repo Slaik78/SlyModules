@@ -97,7 +97,7 @@ class HerokuInfoMod(loader.Module):
             upd = ""
 
         me = self.config['imgSettings'][0] if (self.config['imgSettings'][0] != "Лапокапканот") and self.config['switchInfo'] else '<b><a href="tg://user?id={}">{}</a></b>'.format(
-            self._client.hikka_me.id,
+            self._client.heroku_me.id,
             utils.escape_html(get_display_name(self._client.hikka_me)),
         )
         build = utils.get_commit_url()
