@@ -330,7 +330,7 @@ class Wedding(loader.Module):
                 urluser = urluser[next((key for key, value in urluser.items() if value != self.me.id), None)]
                 user = await self.client.get_entity(urluser)
                 if self.config['BlockWedlock']:
-                    await utils.answer(message, self.config['BlockWedlock'].format(yname=f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", hname=f"<a href='tg://user?id={urluser}'>{user.first_name}</a>",, day=datedb.day, month=datedb.strftime('%B'), year=datedb.year, days=days))
+                    await utils.answer(message, self.config['BlockWedlock'].format(yname=f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", hname=f"<a href='tg://user?id={urluser}'>{user.first_name}</a>", day=datedb.day, month=datedb.strftime('%B'), year=datedb.year, days=days))
                 else:
                     await utils.answer(message, self.strings('married').format(f"<a href='tg://user?id={self.me.id}'>{self.me.first_name}</a>", f"<a href='tg://user?id={urluser}'>{user.first_name}</a>", datedb.day, datedb.strftime('%B'), datedb.year, days))
         else:
